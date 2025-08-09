@@ -9,6 +9,10 @@ load_dotenv()
 app = Flask(__name__)
 app.secret_key = os.getenv("SPOTIFY_CLIENT_SECRET")
 
+@app.route('/')
+def home():
+    return "Spotify Playlist Creator API is running! Use /login to authenticate with Spotify."
+
 # Login to spotify
 @app.route('/login')
 def login():
