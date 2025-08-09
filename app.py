@@ -3,15 +3,29 @@ from spotify_helper import sp_oauth, get_spotify_client, create_playlist, search
 from gemini_helper import generate_song_list
 from dotenv import load_dotenv
 import os
+from datetime import timedelta
 
 load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SPOTIFY_CLIENT_SECRET")
 
+# Configure session
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=1)
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+
 @app.route('/')
 def home():
     return "Spotify Playlist Creator API is running! Use /login to authenticate with Spotify."
+
+@app.route('/check_auth')
+def check_auth():
+    token_info = session.get('token_info')
+    if token_info:
+        return jsonify({"authenticated": True, "message": "You are authenticated!"})
+    else:
+        return jsonify({"authenticated": False, "message": "Not authenticated"})
 
 # Login to spotify
 @app.route('/login')
@@ -24,6 +38,7 @@ def callback():
     code = request.args.get('code')
     token_info = sp_oauth.get_access_token(code)
     session['token_info'] = token_info
+    session.permanent = True  # Make session permanent
     return redirect('/done')
 
 @app.route('/done')
