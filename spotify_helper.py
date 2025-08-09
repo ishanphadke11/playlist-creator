@@ -14,7 +14,8 @@ sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIFY_CLIENT_ID"),
     client_secret=os.getenv("SPOTIFY_CLIENT_SECRET"),
     redirect_uri=redirect_uri,
-    scope=scope
+    scope=scope,
+    show_dialog=True
 )
 
 def get_spotify_client(token_info):
