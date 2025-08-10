@@ -12,6 +12,15 @@ import google.generativeai as genai
 
 load_dotenv()
 
+API_KEY = os.getenv("GOOGLE_API_KEY")
+if not API_KEY:
+    raise RuntimeError("GOOGLE_API_KEY not found in environment variables.")
+
+print(f"[DEBUG] GOOGLE_API_KEY loaded: {API_KEY[:5]}...")  # mask for logs
+
+genai.configure(api_key=API_KEY)
+
+
 app = Flask(__name__)
 app.secret_key = os.getenv("SPOTIFY_CLIENT_SECRET")
 
@@ -148,6 +157,7 @@ def generate_playlist_route():
         print(f"[DEBUG] Spotify user_id: {user_id}")
 
         # Gemini step
+        print("Calling generate song list")
         songs = generate_song_list(topic, language)
         print(f"[DEBUG] Gemini returned songs: {songs}")
 

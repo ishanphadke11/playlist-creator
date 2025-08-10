@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
+print("[DEBUG] Env keys available:", list(os.environ.keys()))
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 def generate_song_list(prompt, language):
