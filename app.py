@@ -119,6 +119,7 @@ def auth_status():
     return jsonify({"authenticated": False})
 
 @app.route('/generate_playlist', methods=['POST', 'OPTIONS'])
+@app.route('/generate_playlist', methods=['POST', 'OPTIONS'])
 def generate_playlist_route():
     if request.method == 'OPTIONS':
         resp = make_response()
@@ -128,9 +129,12 @@ def generate_playlist_route():
         return resp
 
     data = request.json
-    topic = data['topic']
-    language = data['language']
+    topic = data.get('topic', '').strip()
+    language = data.get('language', '').strip()
     auth_id = data.get('auth_id')
+
+    if not topic or not language:
+        return jsonify({"error": "Missing topic or language"}), 400
 
     token_info = _tokens_by_authid.get(auth_id)
     if not token_info:
@@ -140,17 +144,30 @@ def generate_playlist_route():
 
     try:
         sp = get_spotify_client(token_info)
-        user_id = sp.me()['id']
+        user_id = sp.me().get('id')
+
+        # Gemini song generation
         songs = generate_song_list(topic, language)
+        if not songs or not isinstance(songs, list):
+            return jsonify({"error": "Gemini returned no songs"}), 500
+
+        # Create playlist
         playlist_id, playlist_url = create_playlist(sp, user_id, f"{topic} Songs")
+
+        # Search and add tracks
         search_and_add_tracks(sp, playlist_id, songs)
+
         resp = jsonify({"playlist_url": playlist_url})
         resp.headers.add("Access-Control-Allow-Origin", "*")
         return resp
+
     except Exception as e:
+        import traceback
+        traceback.print_exc()  # Logs error to server
         resp = jsonify({"error": f"Playlist creation failed: {str(e)}"})
         resp.headers.add("Access-Control-Allow-Origin", "*")
         return resp, 500
+
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
