@@ -20,25 +20,35 @@ sp_oauth = SpotifyOAuth(
 def get_spotify_client(token_info):
     return spotipy.Spotify(auth=token_info['access_token'])
 
-def create_playlist(sp, user_id, name):
-    playlist = sp.user_playlist_create(user=user_id, name=name, public=True)
-    return playlist['id'], playlist['external_urls']['spotify']
-
 def search_and_add_tracks(sp, playlist_id, songs):
+    """
+    Search for each song on Spotify and add it to the playlist.
+    Skips empty entries and logs each step.
+    """
     for entry in songs:
         entry = entry.strip()
-        if not entry:  # Skip empty lines
+        if not entry:
             print("[WARN] Skipping empty song entry")
             continue
 
         try:
-            result = sp.search(q=entry, limit=1, type='track')
-            tracks = result.get('tracks', {}).get('items', [])
+            print(f"[DEBUG] Searching for: {entry}")
+            result = sp.search(q=entry, limit=1, type="track")
+            tracks = result.get("tracks", {}).get("items", [])
             if tracks:
-                track_id = tracks[0]['id']
+                track_id = tracks[0]["id"]
                 sp.playlist_add_items(playlist_id, [track_id])
                 print(f"[INFO] Added: {entry}")
             else:
                 print(f"[WARN] No results for: {entry}")
         except Exception as e:
             print(f"[ERROR] Failed to search/add {entry}: {e}")
+
+
+def create_playlist(sp, user_id, name):
+    """
+    Create a Spotify playlist and return the playlist object.
+    """
+    playlist = sp.user_playlist_create(user=user_id, name=name, public=False)
+    print(f"[INFO] Created playlist: {playlist['external_urls']['spotify']}")
+    return playlist

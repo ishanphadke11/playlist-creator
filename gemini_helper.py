@@ -1,26 +1,28 @@
-import google.generativeai as genai
 import os
-from dotenv import load_dotenv
+import google.generativeai as genai
 
-load_dotenv()
-print("[DEBUG] Env keys available:", list(os.environ.keys()))
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-def generate_song_list(prompt, language):
-    print(f"[DEBUG] Calling Gemini with prompt='{prompt}', language='{language}'")
-    model = genai.GenerativeModel('gemini-1.5-flash')
+genai.configure(api_key=GEMINI_API_KEY)
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+
+def generate_song_list(topic: str, language: str):
+    """
+    Generate a list of songs using Gemini. Ensures no empty entries.
+    """
     full_prompt = (
-        f"Generate exactly 15 songs about '{prompt}' in '{language}'. "
-        "Return them in the format: Song Name - Artist Name, one per line. "
-        "No numbering, no extra commentary."
+        f"Generate a playlist of 10 songs about '{topic}' in {language}. "
+        "Return one song per line in the format: Song Name - Artist."
     )
+
     response = model.generate_content(full_prompt)
+    raw_lines = response.text.split("\n")
+    songs = [line.strip() for line in raw_lines if line.strip()]
 
-    print(f"[DEBUG] Gemini raw response: {getattr(response, 'text', None)}")
+    print("[DEBUG] Raw Gemini response:")
+    print(response.text)
+    print("[DEBUG] Cleaned song list:")
+    print(songs)
 
-    if not hasattr(response, "text") or not response.text:
-        return []
-
-    songs = [line.strip() for line in response.text.splitlines() if line.strip()]
     return songs
-
