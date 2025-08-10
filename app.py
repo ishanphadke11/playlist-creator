@@ -24,15 +24,6 @@ def login():
     auth_url = sp_oauth.get_authorize_url()
     return redirect(auth_url)
 
-# Add CORS headers to all responses
-@app.after_request
-def add_cors_headers(response):
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
-    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
-    return response
-
-# Updated callback route
 @app.route('/callback')
 def callback():
     code = request.args.get('code')
@@ -41,14 +32,26 @@ def callback():
     
     try:
         token_info = sp_oauth.get_access_token(code)
-        access_token = token_info['access_token']
+        session['token_info'] = token_info
+        session.permanent = True
         
-        # Return token as JSON instead of HTML
-        return jsonify({
-            "status": "success",
-            "access_token": access_token,
-            "token_preview": access_token[:20] + "..."
-        })
+        # Return a page that works with Streamlit
+        return f"""
+        <html>
+        <head><title>Authentication Complete</title></head>
+        <body>
+        <h2>✅ Authentication Complete!</h2>
+        <p>You can now close this tab and go back to your Streamlit app.</p>
+        <p>Your session token: <code>{token_info['access_token'][:20]}...</code></p>
+        <script>
+        // Try to communicate with parent window
+        if (window.opener) {{
+            window.opener.postMessage('spotify_auth_complete', '*');
+        }}
+        </script>
+        </body>
+        </html>
+        """
     except Exception as e:
         return jsonify({"error": f"Authentication failed: {str(e)}"}), 400
 
@@ -57,7 +60,7 @@ def check_auth():
     token_info = session.get('token_info')
     if token_info:
         return jsonify({
-            "authenticated": True, 
+            "authenticated": True,
             "message": "You are authenticated!",
             "token_preview": token_info['access_token'][:20] + "..."
         })

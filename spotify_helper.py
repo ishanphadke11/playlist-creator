@@ -1,14 +1,13 @@
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
-import os 
-from dotenv import load_dotenv 
+import os
+from dotenv import load_dotenv
 
 load_dotenv()
 
 scope = "playlist-modify-public"
-
 redirect_uri = os.getenv("SPOTIFY_REDIRECT_URI")
-print(f"[DEBUG] Using redirect URI: {redirect_uri}")  # <-- Debug print
+print(f"[DEBUG] Using redirect URI: {redirect_uri}") # <-- Debug print
 
 sp_oauth = SpotifyOAuth(
     client_id=os.getenv("SPOTIFY_CLIENT_ID"),
@@ -32,6 +31,6 @@ def search_and_add_tracks(sp, playlist_id, song_list):
         tracks = result.get('tracks', {}).get('items')
         if tracks:
             track_uris.append(tracks[0]['uri'])
-
+    
     if track_uris:
         sp.playlist_add_items(playlist_id, track_uris)
