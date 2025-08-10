@@ -9,6 +9,8 @@ import time
 import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import google.generativeai as genai
+from spotify_helper import get_spotify_client, search_and_add_tracks, create_playlist
+from gemini_helper import generate_song_list
 
 load_dotenv()
 
@@ -49,29 +51,6 @@ sp_oauth = SpotifyOAuth(
 # Configure Gemini API
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
-# ---------- Helper Functions ----------
-def get_spotify_client(token_info):
-    return spotipy.Spotify(auth=token_info['access_token'])
-
-def create_playlist(sp, user_id, name):
-    playlist = sp.user_playlist_create(user=user_id, name=name, public=True)
-    return playlist['id'], playlist['external_urls']['spotify']
-
-def search_and_add_tracks(sp, playlist_id, song_list):
-    track_uris = []
-    for entry in song_list:
-        result = sp.search(q=entry, limit=1, type='track')
-        tracks = result.get('tracks', {}).get('items')
-        if tracks:
-            track_uris.append(tracks[0]['uri'])
-    if track_uris:
-        sp.playlist_add_items(playlist_id, track_uris)
-
-def generate_song_list(prompt, language):
-    model = genai.GenerativeModel('gemini-1.5-flash')
-    full_prompt = f"Generate a list of 15 songs related to the topic '{prompt}' in '{language}'. Just return the song name and artist in each line."
-    response = model.generate_content(full_prompt)
-    return response.text.splitlines()
 
 # ---------- Routes ----------
 @app.route('/')
