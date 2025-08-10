@@ -46,9 +46,7 @@ def search_and_add_tracks(sp, playlist_id, songs):
 
 
 def create_playlist(sp, user_id, name):
-    """
-    Create a Spotify playlist and return the playlist object.
-    """
     playlist = sp.user_playlist_create(user=user_id, name=name, public=True)
     print(f"[INFO] Created playlist: {playlist['external_urls']['spotify']}")
-    return playlist
+    return playlist['id'], playlist['external_urls']['spotify']
+
