@@ -52,10 +52,10 @@ sp_oauth = SpotifyOAuth(
 genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
 
 
-# ---------- Routes ----------
+# Routes
 @app.route('/')
 def home():
-    return "🎵 Spotify Playlist Creator API is running!"
+    return "Spotify Playlist Creator API is running"
 
 @app.route('/start_auth')
 def start_auth():
@@ -77,7 +77,7 @@ def callback():
         return f"""
         <html>
         <body>
-          <h2>✅ Authentication complete — you can close this tab.</h2>
+          <h2>Authentication complete — you can close this tab.</h2>
           <script>
             if (window.opener) {{
               window.opener.postMessage({{type: 'spotify_auth_complete', auth_id: '{state}'}}, '*');
@@ -118,14 +118,13 @@ def generate_playlist_route():
 
     try:
         data = request.json
-        topic = data.get('topic', '').strip()
-        language = data.get('language', '').strip()
+        prompt = data.get("custom_prompt").strip()
         auth_id = data.get('auth_id')
 
-        print(f"[DEBUG] Incoming playlist request: topic={topic}, language={language}, auth_id={auth_id}")
+        print(f"[DEBUG] Incoming playlist request: {prompt}, auth_id={auth_id}")
 
-        if not topic or not language:
-            return jsonify({"error": "Missing topic or language"}), 400
+        if not prompt:
+            return jsonify({"error": "Missing prompt"}), 400
 
         token_info = _tokens_by_authid.get(auth_id)
         if not token_info:
@@ -137,13 +136,13 @@ def generate_playlist_route():
 
         # Gemini step
         print("Calling generate song list")
-        songs = generate_song_list(topic, language)
+        songs = generate_song_list(prompt)
         print(f"[DEBUG] Gemini returned songs: {songs}")
 
         if not songs:
             return jsonify({"error": "Gemini returned no songs"}), 500
 
-        playlist_id, playlist_url = create_playlist(sp, user_id, f"{topic} Songs")
+        playlist_id, playlist_url = create_playlist(sp, user_id, f"Custom Playlist")
         print(f"[DEBUG] Created playlist: {playlist_id} - {playlist_url}")
 
         search_and_add_tracks(sp, playlist_id, songs)

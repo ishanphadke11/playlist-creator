@@ -14,7 +14,7 @@ if "authenticated" not in st.session_state:
 
 # Step 1: Login
 st.markdown("### Step 1: Authenticate with Spotify")
-if st.button("🎧 Login with Spotify"):
+if st.button("Login with Spotify"):
     r = requests.get(f"{BASE_URL}/start_auth", timeout=10)
     if r.ok:
         obj = r.json()
@@ -26,38 +26,36 @@ if st.button("🎧 Login with Spotify"):
             for _ in range(60):
                 s = requests.get(f"{BASE_URL}/auth_status", params={"auth_id": auth_id}, timeout=5)
                 if s.ok and s.json().get("authenticated"):
-                    st.success("✅ Authenticated with Spotify!")
+                    st.success("Authenticated with Spotify!")
                     st.session_state.authenticated = True
                     break
                 time.sleep(1)
             else:
-                st.warning("⏳ Timed out waiting for Spotify login.")
+                st.warning("Timed out waiting for Spotify login.")
     else:
-        st.error("❌ Failed to start authentication.")
+        st.error("Failed to start authentication.")
 
 # Step 2: Create playlist
 st.markdown("### Step 2: Create a Playlist")
-topic = st.text_input("Enter a topic:")
-language = st.text_input("Enter language:")
+custom_prompt = st.text_area("Enter your prompt: ")
 
-if st.button("🎵 Generate Playlist"):
-    if not topic or not language:
-        st.error("Please enter both topic and language.")
+if st.button("Generate Playlist"):
+    if not custom_prompt.strip():
+        st.error("Please enter a prompt")
     elif not st.session_state.authenticated:
-        st.error("⚠️ Please authenticate with Spotify first!")
+        st.error("Please authenticate with Spotify first!")
     else:
         with st.spinner("Creating playlist..."):
             payload = {
-                "topic": topic,
-                "language": language,
+                "custom_prompt": custom_prompt,
                 "auth_id": st.session_state.auth_id
             }
             resp = requests.post(f"{BASE_URL}/generate_playlist", json=payload, timeout=30)
             if resp.ok:
                 playlist_url = resp.json()["playlist_url"]
-                st.success("🎉 Playlist created!")
+                st.success("Playlist created!")
                 st.markdown(f"[Open Playlist]({playlist_url})")
             elif resp.status_code == 401:
-                st.error("⚠️ Not authenticated with Spotify.")
+                st.error("Not authenticated with Spotify.")
             else:
-                st.error("❌ Something went wrong.")
+                st.error("Something went wrong.")
