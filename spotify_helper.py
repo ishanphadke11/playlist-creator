@@ -24,13 +24,21 @@ def create_playlist(sp, user_id, name):
     playlist = sp.user_playlist_create(user=user_id, name=name, public=True)
     return playlist['id'], playlist['external_urls']['spotify']
 
-def search_and_add_tracks(sp, playlist_id, song_list):
-    track_uris = []
-    for entry in song_list:
-        result = sp.search(q=entry, limit=1, type='track')
-        tracks = result.get('tracks', {}).get('items')
-        if tracks:
-            track_uris.append(tracks[0]['uri'])
-    
-    if track_uris:
-        sp.playlist_add_items(playlist_id, track_uris)
+def search_and_add_tracks(sp, playlist_id, songs):
+    for entry in songs:
+        entry = entry.strip()
+        if not entry:  # Skip empty lines
+            print("[WARN] Skipping empty song entry")
+            continue
+
+        try:
+            result = sp.search(q=entry, limit=1, type='track')
+            tracks = result.get('tracks', {}).get('items', [])
+            if tracks:
+                track_id = tracks[0]['id']
+                sp.playlist_add_items(playlist_id, [track_id])
+                print(f"[INFO] Added: {entry}")
+            else:
+                print(f"[WARN] No results for: {entry}")
+        except Exception as e:
+            print(f"[ERROR] Failed to search/add {entry}: {e}")
