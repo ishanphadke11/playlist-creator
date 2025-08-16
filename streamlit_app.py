@@ -5,7 +5,7 @@ import time
 BASE_URL = "https://playlist-creator-ndda.onrender.com"
 
 st.set_page_config(page_title="Spotify Playlist Creator", page_icon="🎵")
-st.title("🎵 Spotify Playlist Creator")
+st.title("Spotify Playlist Creator")
 
 if "auth_id" not in st.session_state:
     st.session_state.auth_id = None

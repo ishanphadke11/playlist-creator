@@ -18,10 +18,7 @@ API_KEY = os.getenv("GOOGLE_API_KEY")
 if not API_KEY:
     raise RuntimeError("GOOGLE_API_KEY not found in environment variables.")
 
-print(f"[DEBUG] GOOGLE_API_KEY loaded: {API_KEY[:5]}...")  # mask for logs
-
 genai.configure(api_key=API_KEY)
-
 
 app = Flask(__name__)
 app.secret_key = os.getenv("SPOTIFY_CLIENT_SECRET")
