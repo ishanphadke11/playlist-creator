@@ -23,43 +23,36 @@ def get_spotify_client(token_info):
 
 def search_and_add_tracks(sp, playlist_id, songs):
     """
-    Improved Spotify search logic:
-    - Wraps song titles in quotes for exact match
-    - Normalizes artist names
-    - Tries multiple search results and picks most popular
+    Search Spotify for each song title and add the most popular result to the playlist.
+    Returns the list of actually added tracks (title + artists).
     """
-    for entry in songs:
-        entry = entry.strip()
-        if not entry:
-            print("[WARN] Skipping empty song entry")
+    final_tracks = []
+
+    for song in songs:
+        song = song.strip()
+        if not song:
             continue
 
         try:
-            # Split into song and artist
-            if " - " in entry:
-                song, artist = entry.split(" - ", 1)
-                song = song.strip()
-                artist = artist.strip().replace(",", " ft.").replace("&", "and")  # normalize artist
-                query = f'track:"{song}" artist:"{artist}"'
-            else:
-                # Fallback if no artist provided
-                query = f'track:"{entry}"'
-
+            query = f'track:"{song}"'
             print(f"[DEBUG] Searching Spotify for: {query}")
-            result = sp.search(q=query, limit=3, type="track")
+            result = sp.search(q=query, limit=5, type="track")
             tracks = result.get("tracks", {}).get("items", [])
 
             if tracks:
-                # Pick the most popular track
-                best_match = max(tracks, key=lambda t: t.get("popularity", 0))
-                sp.playlist_add_items(playlist_id, [best_match["id"]])
-                print(f"[INFO] Added: {best_match['name']} by {best_match['artists'][0]['name']}")
+                # Pick most popular track
+                best = max(tracks, key=lambda t: t.get("popularity", 0))
+                sp.playlist_add_items(playlist_id, [best["id"]])
+                track_info = f"{best['name']} - {', '.join([a['name'] for a in best['artists']])}"
+                final_tracks.append(track_info)
+                print(f"[INFO] Added: {track_info}")
             else:
-                print(f"[WARN] No results for: {entry}")
+                print(f"[WARN] No results for: {song}")
 
         except Exception as e:
-            print(f"[ERROR] Failed to search/add {entry}: {e}")
+            print(f"[ERROR] Failed to add {song}: {e}")
 
+    return final_tracks
 
 
 def create_playlist(sp, user_id, name):

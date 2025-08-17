@@ -105,6 +105,7 @@ def auth_status():
     return jsonify({"authenticated": False})
 
 @app.route('/generate_playlist', methods=['POST', 'OPTIONS'])
+@app.route('/generate_playlist', methods=['POST', 'OPTIONS'])
 def generate_playlist_route():
     if request.method == 'OPTIONS':
         resp = make_response()
@@ -118,37 +119,27 @@ def generate_playlist_route():
         prompt = data.get("custom_prompt").strip()
         auth_id = data.get('auth_id')
 
-        print(f"[DEBUG] Incoming playlist request: {prompt}, auth_id={auth_id}")
-
-        if not prompt:
-            return jsonify({"error": "Missing prompt"}), 400
-
         token_info = _tokens_by_authid.get(auth_id)
         if not token_info:
             return jsonify({"error": "Not authenticated"}), 401
 
         sp = get_spotify_client(token_info)
         user_id = sp.me().get('id')
-        print(f"[DEBUG] Spotify user_id: {user_id}")
 
-        # Gemini step
-        print("Calling generate song list")
+        # Generate song titles from Gemini
         songs = generate_song_list(prompt)
-        print(f"[DEBUG] Gemini returned songs: {songs}")
-
         if not songs:
             return jsonify({"error": "Gemini returned no songs"}), 500
 
         playlist_id, playlist_url = create_playlist(sp, user_id, f"Custom Playlist")
         print(f"[DEBUG] Created playlist: {playlist_id} - {playlist_url}")
 
-        search_and_add_tracks(sp, playlist_id, songs)
-        print(f"[DEBUG] Added {len(songs)} songs to playlist")
+        # Search and add tracks, get final added list
+        final_tracks = search_and_add_tracks(sp, playlist_id, songs)
 
-        # Return the final verified song list along with the playlist URL
         resp = jsonify({
             "playlist_url": playlist_url,
-            "verified_songs": songs
+            "added_songs": final_tracks  # send back the actual songs added
         })
         resp.headers.add("Access-Control-Allow-Origin", "*")
         return resp
@@ -159,6 +150,7 @@ def generate_playlist_route():
         resp = jsonify({"error": f"Playlist creation failed: {str(e)}"})
         resp.headers.add("Access-Control-Allow-Origin", "*")
         return resp, 500
+
 
 
 if __name__ == '__main__':
