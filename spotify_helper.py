@@ -23,10 +23,10 @@ def get_spotify_client(token_info):
 
 def search_and_add_tracks(sp, playlist_id, songs):
     """
-    Improved Spotify search logic.
-    - Tries exact match first
-    - Falls back to partial match
-    - Tries multiple results
+    Improved Spotify search logic:
+    - Wraps song titles in quotes for exact match
+    - Normalizes artist names
+    - Tries multiple search results and picks most popular
     """
     for entry in songs:
         entry = entry.strip()
@@ -35,21 +35,22 @@ def search_and_add_tracks(sp, playlist_id, songs):
             continue
 
         try:
-            print(f"[DEBUG] Searching for: {entry}")
-            
-            # First attempt: full query
-            result = sp.search(q=entry, limit=3, type="track")
-            tracks = result.get("tracks", {}).get("items", [])
-            
-            # If no result, try splitting into song and artist
-            if not tracks and " - " in entry:
+            # Split into song and artist
+            if " - " in entry:
                 song, artist = entry.split(" - ", 1)
-                print(f"[DEBUG] Secondary search: song={song}, artist={artist}")
-                result = sp.search(q=f"track:{song} artist:{artist}", limit=3, type="track")
-                tracks = result.get("tracks", {}).get("items", [])
+                song = song.strip()
+                artist = artist.strip().replace(",", " ft.").replace("&", "and")  # normalize artist
+                query = f'track:"{song}" artist:"{artist}"'
+            else:
+                # Fallback if no artist provided
+                query = f'track:"{entry}"'
+
+            print(f"[DEBUG] Searching Spotify for: {query}")
+            result = sp.search(q=query, limit=3, type="track")
+            tracks = result.get("tracks", {}).get("items", [])
 
             if tracks:
-                # Pick the most popular track from the results
+                # Pick the most popular track
                 best_match = max(tracks, key=lambda t: t.get("popularity", 0))
                 sp.playlist_add_items(playlist_id, [best_match["id"]])
                 print(f"[INFO] Added: {best_match['name']} by {best_match['artists'][0]['name']}")
@@ -58,6 +59,7 @@ def search_and_add_tracks(sp, playlist_id, songs):
 
         except Exception as e:
             print(f"[ERROR] Failed to search/add {entry}: {e}")
+
 
 
 def create_playlist(sp, user_id, name):
