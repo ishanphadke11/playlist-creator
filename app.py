@@ -145,7 +145,11 @@ def generate_playlist_route():
         search_and_add_tracks(sp, playlist_id, songs)
         print(f"[DEBUG] Added {len(songs)} songs to playlist")
 
-        resp = jsonify({"playlist_url": playlist_url})
+        # Return the final verified song list along with the playlist URL
+        resp = jsonify({
+            "playlist_url": playlist_url,
+            "verified_songs": songs
+        })
         resp.headers.add("Access-Control-Allow-Origin", "*")
         return resp
 

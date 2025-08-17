@@ -61,13 +61,19 @@ if submit:
     elif not st.session_state.authenticated:
         st.error("Please authenticate with Spotify first!")
     else:
-        with st.spinner("Creating playlist..."):
+        with st.spinner("Generating playlist..."):
             payload = {
                 "custom_prompt": custom_prompt,
                 "auth_id": st.session_state.auth_id
             }
             resp = requests.post(f"{BASE_URL}/generate_playlist", json=payload, timeout=30)
             if resp.ok:
+                # If your backend also returns the final song list:
+                verified_songs = resp.json().get("verified_songs", [])
+                
+                st.markdown("### Verified Song List Sent to Spotify")
+                st.text_area("Songs", value="\n".join(verified_songs), height=300)
+                
                 playlist_url = resp.json()["playlist_url"]
                 st.success("Playlist created!")
                 st.markdown(f"[Open Playlist]({playlist_url})")
@@ -75,3 +81,4 @@ if submit:
                 st.error("Not authenticated with Spotify.")
             else:
                 st.error("Something went wrong.")
+
