@@ -69,7 +69,7 @@ if submit:
             resp = requests.post(f"{BASE_URL}/generate_playlist", json=payload, timeout=30)
             if resp.ok:
                 # If your backend also returns the final song list:
-                verified_songs = resp.json().get("verified_songs", [])
+                verified_songs = resp.json().get("added_songs", [])
                 
                 st.markdown("### Verified Song List Sent to Spotify")
                 st.text_area("Songs", value="\n".join(verified_songs), height=300)
