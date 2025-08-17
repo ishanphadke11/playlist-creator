@@ -2,6 +2,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
 load_dotenv()
 
@@ -22,8 +23,10 @@ def get_spotify_client(token_info):
 
 def search_and_add_tracks(sp, playlist_id, songs):
     """
-    Search for each song on Spotify and add it to the playlist.
-    Skips empty entries and logs each step.
+    Improved Spotify search logic.
+    - Tries exact match first
+    - Falls back to partial match
+    - Tries multiple results
     """
     for entry in songs:
         entry = entry.strip()
@@ -33,14 +36,26 @@ def search_and_add_tracks(sp, playlist_id, songs):
 
         try:
             print(f"[DEBUG] Searching for: {entry}")
-            result = sp.search(q=entry, limit=1, type="track")
+            
+            # First attempt: full query
+            result = sp.search(q=entry, limit=3, type="track")
             tracks = result.get("tracks", {}).get("items", [])
+            
+            # If no result, try splitting into song and artist
+            if not tracks and " - " in entry:
+                song, artist = entry.split(" - ", 1)
+                print(f"[DEBUG] Secondary search: song={song}, artist={artist}")
+                result = sp.search(q=f"track:{song} artist:{artist}", limit=3, type="track")
+                tracks = result.get("tracks", {}).get("items", [])
+
             if tracks:
-                track_id = tracks[0]["id"]
-                sp.playlist_add_items(playlist_id, [track_id])
-                print(f"[INFO] Added: {entry}")
+                # Pick the most popular track from the results
+                best_match = max(tracks, key=lambda t: t.get("popularity", 0))
+                sp.playlist_add_items(playlist_id, [best_match["id"]])
+                print(f"[INFO] Added: {best_match['name']} by {best_match['artists'][0]['name']}")
             else:
                 print(f"[WARN] No results for: {entry}")
+
         except Exception as e:
             print(f"[ERROR] Failed to search/add {entry}: {e}")
 
@@ -49,4 +64,3 @@ def create_playlist(sp, user_id, name):
     playlist = sp.user_playlist_create(user=user_id, name=name, public=True)
     print(f"[INFO] Created playlist: {playlist['external_urls']['spotify']}")
     return playlist['id'], playlist['external_urls']['spotify']
-
