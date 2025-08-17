@@ -21,7 +21,17 @@ if st.button("Login with Spotify"):
         auth_id = obj["auth_id"]
         auth_url = obj["auth_url"]
         st.session_state.auth_id = auth_id
-        st.markdown(f'[Click here to log in with Spotify]({auth_url})')
+
+        # Open Spotify login in a new tab immediately
+        st.markdown(
+            f"""
+            <script>
+                window.open("{auth_url}", "_blank");
+            </script>
+            """,
+            unsafe_allow_html=True
+        )
+
         with st.spinner("Waiting for you to finish Spotify login in the other tab..."):
             for _ in range(60):
                 s = requests.get(f"{BASE_URL}/auth_status", params={"auth_id": auth_id}, timeout=5)
@@ -34,6 +44,7 @@ if st.button("Login with Spotify"):
                 st.warning("Timed out waiting for Spotify login.")
     else:
         st.error("Failed to start authentication.")
+
 
 # Step 2: Create playlist
 st.markdown("### Step 2: Create a Playlist")
